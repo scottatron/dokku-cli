@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# set -x
+
+GIT_CONFIG=$(git config -l | grep remote.dokku.url)
+if [[ ! -z "$GIT_CONFIG" ]]; then
+  
+  URL=$(echo $GIT_CONFIG | egrep -o '=(.*)$' | sed s/=//)
+  
+  HOST=$(echo $URL | egrep -o '^(.+):' | sed s/://)
+  
+  APP=$(echo $URL | egrep -o ':(.+)$' | sed s/://)
+  
+  SSH="ssh -q $HOST"
+  
+  if [[ -z $1 ]]; then
+    CMD="help"
+  else
+    CMD=$1
+  fi
+  
+  shift
+  
+  NEEDS_APP_ARG=$($SSH help | grep " $CMD <app> ")
+
+  if [[ -n "$NEEDS_APP_ARG" ]]; then
+    ARGS="$APP $@"
+  else
+    ARGS="$@"
+  fi
+  
+  if [[ $CMD == "run" ]]; then
+    $SSH $CMD $ARGS
+  else
+    cat /dev/null | $SSH $CMD $ARGS
+  fi
+  # $SSH $CMD $ARGS
+fi
